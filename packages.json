@@ -1,0 +1,10 @@
+{
+  "_comment": "Packages tracked daily. Grouped only for chart faceting; the collector treats them as a flat list.",
+  "groups": {
+    "frameworks": ["next", "react", "vue", "svelte", "@angular/core", "nuxt", "astro", "remix"],
+    "build": ["webpack", "vite", "rollup", "esbuild", "parcel", "typescript"],
+    "quality": ["eslint", "prettier", "jest", "vitest", "mocha"],
+    "server": ["express", "fastify", "koa", "@nestjs/core"],
+    "libraries": ["lodash", "axios", "chalk", "tailwindcss", "zod"]
+  }
+}

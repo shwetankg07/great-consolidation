@@ -1,0 +1,63 @@
+name: daily
+
+on:
+  schedule:
+    # 05:40 UTC. Scheduled runs on shared runners drift under load, and a time
+    # that is not on the hour tends to be picked up sooner.
+    - cron: "40 5 * * *"
+  workflow_dispatch:
+
+# One run at a time. Two collectors writing the same CSVs would race on the
+# commit, and a manual dispatch during a scheduled run is the usual way that
+# happens.
+concurrency:
+  group: daily-collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run tests
+        run: python -m unittest discover tests
+
+      - name: Collect today's snapshot
+        run: python collect.py
+
+      - name: Redraw charts and README
+        run: python render.py
+
+      - name: Commit
+        env:
+          COMMIT_EMAIL: ${{ secrets.COMMIT_EMAIL }}
+        run: |
+          set -euo pipefail
+
+          # The contribution graph only counts commits whose author email is
+          # verified on the account. A commit authored by github-actions[bot]
+          # is attributed to the bot and appears on nobody's graph.
+          git config user.name "Shwetank Gupta"
+          git config user.email "$COMMIT_EMAIL"
+
+          git add data charts README.md
+
+          # Staging first, then checking the index, so a brand new chart file
+          # counts as a change. `git diff` alone ignores untracked paths.
+          if git diff --cached --quiet; then
+            echo "Nothing changed upstream today."
+            exit 0
+          fi
+
+          git commit -m "$(cat .commit-subject)"
+          git push

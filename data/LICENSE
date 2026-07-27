@@ -1,0 +1,8 @@
+The datasets in this directory (releases.csv, daily.csv) are dedicated to the
+public domain under CC0 1.0 Universal.
+
+https://creativecommons.org/publicdomain/zero/1.0/
+
+They are derived from the public npm registry and from Google's deps.dev API.
+Both permit this use; deps.dev expressly permits clients to cache its data.
+No attribution is required, though a link back is appreciated.
