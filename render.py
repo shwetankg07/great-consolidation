@@ -50,6 +50,7 @@ def draw(releases):
                 "Distinct packages installed alongside each release, by publish date",
                 "packages",
                 theme,
+                color_index=HEADLINE.index,
                 tick_format=lambda value: f"{value:,.0f}",
             ),
         )
@@ -61,6 +62,7 @@ def draw(releases):
                 "Unpacked size of the package alone, log scale, by publish date",
                 "size",
                 theme,
+                color_index=HEADLINE.index,
                 log=True,
                 tick_format=lambda value: f"{value:g} MB",
                 label_format=lambda value: f"{value:,.1f} MB",

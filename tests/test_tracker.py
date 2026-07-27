@@ -6,6 +6,7 @@ one HTTP call each, and mocking them would test the mock.
 
 import datetime
 import math
+import re
 import unittest
 
 from backfill import quarterly_sample
@@ -17,13 +18,18 @@ class VersionFiltering(unittest.TestCase):
         for version in ("1.0.0", "16.2.12", "0.0.1"):
             self.assertTrue(registry.is_stable(version), version)
 
-    def test_prereleases_are_rejected(self):
+    def test_named_prerelease_channels_are_rejected(self):
         for version in ("15.0.0-canary.3", "5.0.0-rc.1", "1.0.0-beta", "2.0.0-alpha.7"):
             self.assertFalse(registry.is_stable(version), version)
 
-    def test_hyphen_alone_does_not_disqualify(self):
-        # Rare, but a build suffix is not a prerelease channel.
-        self.assertTrue(registry.is_stable("1.2.3-patched"))
+    def test_hash_suffixed_prereleases_are_rejected(self):
+        # React's experimental channel publishes continuously as
+        # 0.0.0-<commit sha>. An earlier rule matched only known channel
+        # names and let 719 of these into the dataset, ten of which reached
+        # the published charts. Any hyphen means prerelease, per semver.
+        for version in ("0.0.0-f22621f88", "0.0.0-10745-20240410180016",
+                        "0.0.0-0c756fb-697f004", "1.2.3-patched"):
+            self.assertFalse(registry.is_stable(version), version)
 
     def test_scoped_names_keep_their_at_sign(self):
         self.assertEqual(registry._quote("@angular/core"), "@angular%2Fcore")
@@ -115,6 +121,62 @@ class LabelLayout(unittest.TestCase):
     def test_order_is_preserved_when_crowded(self):
         placed = self._positions([290, 292, 294, 296, 298])
         self.assertEqual(placed, sorted(placed))
+
+
+class SeriesColours(unittest.TestCase):
+    """A package must keep one colour across both charts.
+
+    The two charts are built from different columns, so a package can have
+    enough points to appear in one and not the other. Assigning colours by
+    position in the chart would then shift every series after the gap.
+    """
+
+    def _colours(self, series_names, color_index):
+        """Series line colours, in draw order."""
+        series = {
+            name: [("2020-01-01", 1), ("2021-01-01", 2)] for name in series_names
+        }
+        svg = charts.line_chart(series, "t", "s", "y", "light", color_index=color_index)
+        # stroke-width 2 distinguishes a series line from the 1px leader
+        # lines that connect nudged labels back to their endpoints.
+        return re.findall(
+            r'<path d="M[^"]+" fill="none" stroke="(#[0-9a-f]{6})" stroke-width="2"',
+            svg,
+        )
+
+    def test_dropping_a_middle_series_does_not_repaint_the_others(self):
+        order = ["a", "b", "c", "d"]
+        full = self._colours(order, order.index)
+        without_b = self._colours(["a", "c", "d"], order.index)
+        self.assertEqual([full[0], full[2], full[3]], without_b)
+
+    def test_default_indexing_falls_back_to_draw_order(self):
+        colours = self._colours(["x", "y"], None)
+        self.assertEqual(colours, charts.SERIES_COLORS["light"][:2])
+
+
+class LogFloor(unittest.TestCase):
+    def test_floor_snaps_to_the_decade_below_the_minimum(self):
+        self.assertEqual(charts._log_floor([0.0673, 148.2]), 0.01)
+        self.assertEqual(charts._log_floor([1.5, 900]), 1)
+        self.assertEqual(charts._log_floor([12, 340]), 10)
+
+    def test_zero_and_negative_values_are_ignored(self):
+        self.assertEqual(charts._log_floor([0, 0.5, 3]), 0.1)
+
+    def test_no_positive_values_does_not_raise(self):
+        self.assertEqual(charts._log_floor([0, 0]), 1.0)
+
+    def test_every_log_gridline_lands_inside_the_plot(self):
+        # The bug this guards: a hardcoded floor of 0.05 put the lowest label
+        # ("0.01 MB") on the axis line, which actually sat at 0.05, making a
+        # dip look ten times deeper than it was.
+        series = {"a": [("2020-01-01", 0.0673), ("2021-01-01", 148.2)]}
+        svg = charts.line_chart(series, "t", "s", "y", "light", log=True,
+                                tick_format=lambda v: f"{v:g}")
+        labels = re.findall(r'text-anchor="end"[^>]*>([\d.]+)</text>', svg)
+        self.assertIn("0.01", labels)
+        self.assertIn("100", labels)
 
 
 class Scaling(unittest.TestCase):

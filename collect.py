@@ -14,13 +14,24 @@ from concurrent.futures import ThreadPoolExecutor
 
 from tracker import ROOT, tracked_packages
 from tracker import depsdev, registry, store
+from tracker.http import Unavailable
 
 WORKERS = 8
 
 
 def snapshot(name):
-    """Today's numbers for one package, or None if the registry has nothing."""
-    latest = registry.latest_release(name)
+    """Today's numbers for one package, or None if it could not be read.
+
+    A failure here is deliberately not fatal. One unreachable package should
+    cost one row, not the whole day's collection, because a run that raises
+    produces no commit at all.
+    """
+    try:
+        latest = registry.latest_release(name)
+    except Unavailable as error:
+        print(f"  skipped {name}: {error}")
+        return None
+
     if latest is None:
         return None
     latest["tree_size"] = depsdev.tree_size(name, latest["version"])
@@ -28,14 +39,21 @@ def snapshot(name):
 
 
 def main():
-    today = datetime.date.today().isoformat()
+    # UTC explicitly, because the workflow runner is on UTC and a local run
+    # from another timezone would otherwise write a different date for the
+    # same moment. India is UTC+5:30, so a late-night local run would land on
+    # tomorrow's row.
+    today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
     names = tracked_packages()
 
     with ThreadPoolExecutor(WORKERS) as pool:
         snapshots = [row for row in pool.map(snapshot, names) if row]
 
-    if not snapshots:
-        print("No package data returned; leaving the dataset untouched.")
+    if len(snapshots) < len(names) * 0.5:
+        print(
+            f"Only {len(snapshots)} of {len(names)} packages returned data. "
+            "Refusing to record a run this incomplete."
+        )
         return 1
 
     daily_rows = [dict(row, date=today) for row in snapshots]
@@ -45,19 +63,29 @@ def main():
     # here means the history stays current without ever re-running backfill.py.
     releases = store.load_releases()
     known = {(row["package"], row["version"]) for row in releases}
-    fresh = [
-        {
-            "package": row["package"],
-            "version": row["version"],
-            "published": today,
-            "unpacked_bytes": row["unpacked_bytes"],
-            "file_count": row["file_count"],
-            "direct_deps": row["direct_deps"],
-            "tree_size": row["tree_size"],
-        }
-        for row in snapshots
-        if (row["package"], row["version"]) not in known
-    ]
+    unseen = [row for row in snapshots if (row["package"], row["version"]) not in known]
+
+    # Ask when each was actually published rather than assuming it happened
+    # today. A version can be new to us without being new to the world: adding
+    # a package to packages.json introduces its entire back catalogue at once,
+    # and stamping all of it with today's date would invent history.
+    fresh = []
+    for row in unseen:
+        try:
+            published = registry.publish_date(row["package"], row["version"])
+        except Unavailable:
+            published = None
+        fresh.append(
+            {
+                "package": row["package"],
+                "version": row["version"],
+                "published": published or today,
+                "unpacked_bytes": row["unpacked_bytes"],
+                "file_count": row["file_count"],
+                "direct_deps": row["direct_deps"],
+                "tree_size": row["tree_size"],
+            }
+        )
 
     if fresh:
         merged, added = store.merge_releases(releases, fresh)

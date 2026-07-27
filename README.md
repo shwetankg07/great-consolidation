@@ -14,11 +14,13 @@ Since 2018-03, installing `next` went from pulling in **707 packages to 49**, a 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="charts/trees-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="charts/trees-light.svg">
   <img alt="Transitive dependency counts for six major npm packages, 2018 to today. Most fall steeply." src="charts/trees-light.svg">
 </picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="charts/sizes-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="charts/sizes-light.svg">
   <img alt="Unpacked package size on a log scale for the same six packages. Next.js rises by more than two orders of magnitude." src="charts/sizes-light.svg">
 </picture>
 
@@ -71,7 +73,7 @@ to have something to show. The first commit carried eight years of measurements.
 The daily job only extends the right-hand edge.
 
 <!-- generated:stats -->
-`7,691` releases measured across `28` packages, `756` with a resolved dependency graph. Last collected `2026-07-28`.
+`17,754` releases measured across `83` packages, `2,121` with a resolved dependency graph. Last collected `2026-07-27`.
 <!-- /generated:stats -->
 
 Dependency graphs are sampled at one release per package per quarter. Resolving
@@ -98,9 +100,17 @@ in early 2018 and 2.4 MB today. Nothing shrank by a factor of fourteen. The layo
 of what gets published changed. Per-package anomalies deserve a look at the release
 notes before being read as a trend.
 
-**The sample is 28 popular packages,** picked for recognisability, not drawn at
-random from the registry. It shows what happened to the tools most people actually
-install. It is not a census of npm.
+**The sample is popular packages, picked for recognisability,** not drawn at random
+from the registry. It shows what happened to the tools most people actually
+install. It is not a census of npm, and it is biased toward packages that survived
+long enough to have eight years of history.
+
+**Prereleases are excluded entirely.** Any version containing a hyphen is dropped,
+per semver. This matters more than it sounds: React publishes its experimental
+channel continuously as `0.0.0-<commit sha>`, and Astro and Rollup do similar. An
+earlier version of this collector filtered only on known channel names such as
+`canary` and `beta`, which let 719 of those builds into the dataset and ten of them
+into the published charts.
 
 ## Data
 

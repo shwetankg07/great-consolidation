@@ -62,6 +62,20 @@ def _day_number(iso_date, origin):
     return (datetime.date(year, month, day) - origin).days
 
 
+def _log_floor(values):
+    """The power of ten at or below the smallest positive value.
+
+    Anchoring the log axis to a decade means every gridline the tick loop
+    draws is inside the plotted range. A hardcoded floor does not: it leaves
+    the lowest label sitting on the axis line while describing a value further
+    down, so a dip toward the bottom reads as far deeper than it is.
+    """
+    positive = [value for value in values if value > 0]
+    if not positive:
+        return 1.0
+    return 10 ** math.floor(math.log10(min(positive)))
+
+
 class _Scale:
     """Maps dates to x and values to y, linearly or on a log axis."""
 
@@ -85,6 +99,8 @@ class _Scale:
 
 def _nice_ticks(top):
     """A handful of round gridlines that reach but do not exceed the top."""
+    if top <= 0:
+        return [0]
     step = 10 ** math.floor(math.log10(top / 4)) if top > 4 else 1
     for multiple in (1, 2, 2.5, 5, 10):
         if top / (step * multiple) <= 6:
@@ -130,6 +146,7 @@ def line_chart(
     log=False,
     tick_format=str,
     label_format=None,
+    color_index=None,
 ):
     """Render one chart.
 
@@ -141,6 +158,9 @@ def line_chart(
     of decimals.
     """
     label_format = label_format or tick_format
+    if color_index is None:
+        order = list(series)
+        color_index = order.index
     palette = THEMES[theme]
     colors = SERIES_COLORS[theme]
 
@@ -153,7 +173,13 @@ def line_chart(
     span = max(_day_number(date, origin) for date, _ in points)
     peak = max(value for _, value in points)
 
-    scale = _Scale(origin, span, peak * (1.0 if log else 1.08), log=log)
+    scale = _Scale(
+        origin,
+        span,
+        peak * (1.0 if log else 1.08),
+        log=log,
+        floor=_log_floor(value for _, value in points),
+    )
 
     out = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" '
@@ -210,10 +236,14 @@ def line_chart(
     )
 
     endpoints = []
-    for index, (name, run) in enumerate(series.items()):
+    for name, run in series.items():
         if len(run) < 2:
             continue
-        color = colors[index % len(colors)]
+        # Keyed on the package, never on its position in this particular
+        # chart. Indexing by enumeration means that if one series is missing
+        # from one of the two charts, every series after it shifts a colour
+        # and the same package appears in two colours across the pair.
+        color = colors[color_index(name) % len(colors)]
         path = " ".join(
             ("M" if step == 0 else "L") + f"{scale.x(date):.1f} {scale.y(value):.1f}"
             for step, (date, value) in enumerate(run)

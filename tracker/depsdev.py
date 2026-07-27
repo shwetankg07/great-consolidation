@@ -13,7 +13,7 @@ substitute for inspecting your own install.
 
 import urllib.parse
 
-from .http import get_json
+from .http import Unavailable, get_json
 
 API = "https://api.deps.dev/v3"
 
@@ -30,7 +30,13 @@ def tree_size(name, version):
     which happens for very new releases and for a handful of older ones.
     """
     url = f"{API}/systems/npm/packages/{_quote(name)}/versions/{_quote(version)}:dependencies"
-    graph = get_json(url)
+    try:
+        graph = get_json(url)
+    except Unavailable:
+        # An unreachable dependency service must not cost us the day's
+        # registry measurements. The row is written with an empty tree_size
+        # and the next release of this package fills the gap.
+        return None
     if graph is None:
         return None
 

@@ -7,17 +7,11 @@ request, which is why this project does not have to wait a year to have a
 chart worth looking at.
 """
 
-import re
 import urllib.parse
 
 from .http import get_json
 
 REGISTRY = "https://registry.npmjs.org"
-
-# Anything with a hyphenated suffix is a prerelease (1.2.3-canary.4). Tracking
-# them would swamp the stable line with noise from projects that publish
-# nightlies, so they are dropped everywhere.
-PRERELEASE = re.compile(r"-(?:canary|rc|beta|alpha|next|exp|dev|insiders|nightly|pre)")
 
 
 def _quote(name):
@@ -26,7 +20,16 @@ def _quote(name):
 
 
 def is_stable(version):
-    return "-" not in version or not PRERELEASE.search(version)
+    """True for a release version, false for any prerelease.
+
+    Semver defines the hyphen as the prerelease separator, so this is the
+    whole rule. An earlier version of this checked for known channel names
+    (canary, rc, beta) and let 719 rows of junk through: React publishes its
+    experimental channel as 0.0.0-<commit sha>, and Astro and Rollup do
+    something similar. Those builds are published continuously and are not
+    releases, so a chart that includes them is measuring the wrong thing.
+    """
+    return "-" not in version
 
 
 def release_history(name):
@@ -63,6 +66,20 @@ def release_history(name):
 
     history.sort(key=lambda row: (row["published"], row["version"]))
     return history
+
+
+def publish_date(name, version):
+    """The date a specific version was published, or None if unknown.
+
+    The /latest endpoint omits timestamps, so this costs a full document
+    fetch. It is only called when the collector meets a version it has never
+    recorded, which is a handful of times a week.
+    """
+    document = get_json(f"{REGISTRY}/{_quote(name)}")
+    if document is None:
+        return None
+    stamp = (document.get("time") or {}).get(version)
+    return stamp[:10] if stamp else None
 
 
 def latest_release(name):

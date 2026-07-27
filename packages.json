@@ -1,10 +1,34 @@
 {
-  "_comment": "Packages tracked daily. Grouped only for chart faceting; the collector treats them as a flat list.",
+  "_comment": "Packages tracked daily. Grouped for readability and chart faceting; the collector treats them as a flat list. Every entry was checked to have at least eight stable releases carrying size metadata, so none of them draw a line out of two points.",
   "groups": {
-    "frameworks": ["next", "react", "vue", "svelte", "@angular/core", "nuxt", "astro", "remix"],
-    "build": ["webpack", "vite", "rollup", "esbuild", "parcel", "typescript"],
-    "quality": ["eslint", "prettier", "jest", "vitest", "mocha"],
-    "server": ["express", "fastify", "koa", "@nestjs/core"],
-    "libraries": ["lodash", "axios", "chalk", "tailwindcss", "zod"]
+    "frameworks": [
+      "next", "react", "vue", "svelte", "@angular/core", "nuxt", "astro", "remix",
+      "preact", "solid-js", "@sveltejs/kit", "lit", "alpinejs"
+    ],
+    "build": [
+      "webpack", "vite", "rollup", "esbuild", "parcel", "typescript", "@babel/core",
+      "@swc/core", "terser", "postcss", "sass", "turbo", "nx", "tsup"
+    ],
+    "quality": [
+      "eslint", "prettier", "jest", "vitest", "mocha", "cypress", "playwright",
+      "storybook", "@testing-library/react", "husky", "typescript-eslint"
+    ],
+    "server": [
+      "express", "fastify", "koa", "@nestjs/core", "hono", "socket.io", "undici",
+      "@trpc/server"
+    ],
+    "data": [
+      "prisma", "mongoose", "typeorm", "sequelize", "drizzle-orm", "pg", "mysql2",
+      "ioredis", "knex"
+    ],
+    "state": [
+      "redux", "@reduxjs/toolkit", "zustand", "jotai", "pinia", "react-router",
+      "@tanstack/react-query", "framer-motion"
+    ],
+    "libraries": [
+      "lodash", "axios", "chalk", "tailwindcss", "zod", "dayjs", "date-fns", "moment",
+      "rxjs", "uuid", "commander", "yargs", "dotenv", "joi", "winston", "sharp",
+      "d3", "three", "chart.js", "openai"
+    ]
   }
 }

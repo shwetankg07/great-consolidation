@@ -46,7 +46,17 @@ jobs:
 
           # The contribution graph only counts commits whose author email is
           # verified on the account. A commit authored by github-actions[bot]
-          # is attributed to the bot and appears on nobody's graph.
+          # is attributed to the bot and appears on nobody's graph. Checked up
+          # front, because the failure is otherwise silent: the commits land,
+          # the repository looks healthy, and the graph stays empty.
+          if [ -z "${COMMIT_EMAIL:-}" ]; then
+            echo "COMMIT_EMAIL secret is not set." >&2
+            echo "Set it to an email verified on the account, or these" >&2
+            echo "commits will not appear on the contribution graph:" >&2
+            echo "  gh secret set COMMIT_EMAIL --body 'you@example.com'" >&2
+            exit 1
+          fi
+
           git config user.name "Shwetank Gupta"
           git config user.email "$COMMIT_EMAIL"
 
@@ -60,4 +70,10 @@ jobs:
           fi
 
           git commit -m "$(cat .commit-subject)"
-          git push
+
+          # A manual commit pushed while this job was running would otherwise
+          # make the push fail and lose the day. Rebase and retry once.
+          git push || {
+            git pull --rebase --autostash
+            git push
+          }

@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from tracker import tracked_packages
 from tracker import depsdev, registry, store
+from tracker.http import Unavailable
 
 WORKERS = 8
 
@@ -38,7 +39,11 @@ def quarterly_sample(history):
 
 
 def collect_package(name):
-    history = registry.release_history(name)
+    try:
+        history = registry.release_history(name)
+    except Unavailable as error:
+        print(f"  {name}: unavailable, skipped ({error})")
+        return []
     if not history:
         print(f"  {name}: no sized releases found")
         return []
