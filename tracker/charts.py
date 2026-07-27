@@ -173,10 +173,13 @@ def line_chart(
     span = max(_day_number(date, origin) for date, _ in points)
     peak = max(value for _, value in points)
 
+    # Headroom so the highest marker is not bisected by the top edge. The log
+    # axis needs less because a multiplier there is a fraction of a decade,
+    # and its gridlines stay valid since they are powers of ten below the top.
     scale = _Scale(
         origin,
         span,
-        peak * (1.0 if log else 1.08),
+        peak * (1.12 if log else 1.08),
         log=log,
         floor=_log_floor(value for _, value in points),
     )

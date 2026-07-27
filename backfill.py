@@ -12,6 +12,12 @@ guessed or interpolated.
 
     python backfill.py                 all tracked packages
     python backfill.py next webpack    just these
+    python backfill.py --repair        fill gaps left by past failures
+
+Repair exists because a release row is never rewritten once stored, which
+keeps history immutable but means a version sampled during a deps.dev outage
+keeps its empty tree_size forever. Repair is the one operation allowed to fill
+those cells in, and only where they are empty.
 """
 
 import sys
@@ -63,8 +69,49 @@ def collect_package(name):
     return history
 
 
+def repair(names):
+    """Resolve dependency graphs for sampled versions that are still missing.
+
+    Only ever writes into an empty cell. A tree size already on file stays as
+    it was measured, even if deps.dev would answer differently today.
+    """
+    releases = store.load_releases()
+    by_package = {}
+    for row in releases:
+        by_package.setdefault(row["package"], []).append(row)
+
+    gaps = []
+    for name in names:
+        history = sorted(by_package.get(name, []), key=lambda row: row["published"])
+        for row in quarterly_sample(history):
+            if not row.get("tree_size"):
+                gaps.append(row)
+
+    if not gaps:
+        print("No gaps to repair.")
+        return 0
+
+    print(f"Repairing {len(gaps)} sampled versions with no dependency graph")
+
+    def resolve(row):
+        row["tree_size"] = depsdev.tree_size(row["package"], row["version"])
+        return row
+
+    with ThreadPoolExecutor(WORKERS) as pool:
+        repaired = sum(1 for row in pool.map(resolve, gaps) if row["tree_size"])
+
+    store.save_releases(releases)
+    print(f"Filled {repaired} of {len(gaps)}; {len(gaps) - repaired} still unresolved upstream")
+    return 0
+
+
 def main(argv):
-    names = argv[1:] or tracked_packages()
+    arguments = argv[1:]
+    if "--repair" in arguments:
+        rest = [item for item in arguments if item != "--repair"]
+        return repair(rest or tracked_packages())
+
+    names = arguments or tracked_packages()
     print(f"Backfilling {len(names)} packages")
 
     collected = []

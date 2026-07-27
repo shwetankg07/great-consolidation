@@ -5,6 +5,11 @@ on:
     # 05:40 UTC. Scheduled runs on shared runners drift under load, and a time
     # that is not on the hour tends to be picked up sooner.
     - cron: "40 5 * * *"
+    # A second attempt twelve hours later. The job is idempotent: it upserts
+    # the day's rows and exits without committing when nothing changed, so a
+    # successful morning run makes this one a no-op. It exists so that a
+    # single upstream outage or runner failure costs nothing.
+    - cron: "40 17 * * *"
   workflow_dispatch:
 
 # One run at a time. Two collectors writing the same CSVs would race on the
@@ -60,20 +65,39 @@ jobs:
           git config user.name "Shwetank Gupta"
           git config user.email "$COMMIT_EMAIL"
 
-          git add data charts README.md
+          # Everything this job writes is derived from upstream data, so the
+          # answer to a diverged remote is to regenerate on top of it rather
+          # than to reconcile two versions of a generated file. Rebasing here
+          # conflicts on data/daily.csv and README.md and loses the day's work.
+          stage_and_commit() {
+            git add data charts README.md
 
-          # Staging first, then checking the index, so a brand new chart file
-          # counts as a change. `git diff` alone ignores untracked paths.
-          if git diff --cached --quiet; then
-            echo "Nothing changed upstream today."
-            exit 0
-          fi
+            # Staging first, then checking the index, so a brand new chart
+            # file counts as a change. `git diff` alone ignores untracked paths.
+            if git diff --cached --quiet; then
+              echo "Nothing changed upstream today."
+              return 1
+            fi
 
-          git commit -m "$(cat .commit-subject)"
-
-          # A manual commit pushed while this job was running would otherwise
-          # make the push fail and lose the day. Rebase and retry once.
-          git push || {
-            git pull --rebase --autostash
-            git push
+            git commit -m "$(cat .commit-subject)"
+            return 0
           }
+
+          stage_and_commit || exit 0
+
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+
+            echo "Push rejected, remote moved. Regenerating on top of it."
+            git fetch origin main
+            git reset --hard origin/main
+            python collect.py
+            python render.py
+            stage_and_commit || exit 0
+          done
+
+          echo "Could not push after 3 attempts." >&2
+          exit 1
