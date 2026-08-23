@@ -2246,7 +2246,7 @@ date,package,version,unpacked_bytes,file_count,direct_deps,tree_size
 2026-08-23,@reduxjs/toolkit,2.12.0,6027107,172,6,7
 2026-08-23,@sveltejs/kit,2.70.3,1295202,194,12,16
 2026-08-23,@swc/core,1.16.1,133980,14,2,15
-2026-08-23,@tanstack/react-query,5.102.0,745228,415,1,
+2026-08-23,@tanstack/react-query,5.102.1,745228,415,1,
 2026-08-23,@testing-library/react,16.3.2,336758,25,1,2
 2026-08-23,@trpc/server,11.18.0,2092106,256,0,1
 2026-08-23,alpinejs,3.16.2,671619,67,1,3
