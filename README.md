@@ -73,7 +73,7 @@ to have something to show. The first commit carried eight years of measurements.
 The daily job only extends the right-hand edge.
 
 <!-- generated:stats -->
-`18,030` releases measured across `83` packages, `2,121` with a resolved dependency graph. Last collected `2026-09-24`.
+`18,034` releases measured across `83` packages, `2,121` with a resolved dependency graph. Last collected `2026-09-24`.
 <!-- /generated:stats -->
 
 Dependency graphs are sampled at one release per package per quarter. Resolving
