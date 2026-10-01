@@ -62,8 +62,17 @@ jobs:
             exit 1
           fi
 
-          git config user.name "Shwetank Gupta"
-          git config user.email "$COMMIT_EMAIL"
+          # Roughly one day in three is authored as the account owner and lands
+          # on the graph; the rest go out as github-actions[bot]. Keyed on a
+          # hash of the UTC date rather than a coin flip, so the morning run
+          # and the evening retry always agree on the same day.
+          if [ $((16#$(printf %s "$(date -u +%F)" | sha256sum | cut -c1-2))) -lt 85 ]; then
+            git config user.name "Shwetank Gupta"
+            git config user.email "$COMMIT_EMAIL"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          fi
 
           # Everything this job writes is derived from upstream data, so the
           # answer to a diverged remote is to regenerate on top of it rather

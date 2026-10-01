@@ -138,8 +138,10 @@ Add or remove packages in `packages.json`, then run `backfill.py <name>` to fill
 history for the new ones.
 
 A GitHub Actions workflow runs `collect.py` and `render.py` daily and commits the
-result. It sets the commit author explicitly, because commits attributed to
-`github-actions[bot]` do not appear on a contribution graph.
+result. On roughly one day in three the commit is authored as the account owner,
+so it shows on the contribution graph; on the rest it goes out as
+`github-actions[bot]`. The choice is a hash of the date, so both of a day's runs
+agree.
 
 ## Licence
 
