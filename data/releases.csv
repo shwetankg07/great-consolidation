@@ -2049,6 +2049,7 @@ package,version,published,unpacked_bytes,file_count,direct_deps,tree_size
 @swc/core,1.16.2,2026-09-04,133980,14,2,
 @swc/core,1.16.12,2026-09-29,134383,14,2,
 @swc/core,1.16.13,2026-09-30,134383,14,2,
+@swc/core,1.16.18,2026-10-11,134383,14,2,
 @tanstack/react-query,4.0.5,2022-07-19,1808714,129,3,4
 @tanstack/react-query,4.0.8,2022-07-20,1808714,129,3,
 @tanstack/react-query,4.0.10,2022-07-21,1814185,129,3,
