@@ -2863,6 +2863,7 @@ package,version,published,unpacked_bytes,file_count,direct_deps,tree_size
 @trpc/server,11.24.0,2026-11-03,1787264,262,0,
 @trpc/server,11.25.0,2026-11-06,1832021,262,0,
 @trpc/server,11.25.1,2026-11-08,1832021,262,0,
+@trpc/server,11.25.2,2026-11-08,1836486,262,0,
 alpinejs,1.0.0,2019-12-18,140055,27,0,1
 alpinejs,1.1.1,2019-12-24,149086,28,0,
 alpinejs,1.1.2,2019-12-31,190182,31,0,
