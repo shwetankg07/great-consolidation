@@ -9799,7 +9799,7 @@ date,package,version,unpacked_bytes,file_count,direct_deps,tree_size
 2026-11-22,@reduxjs/toolkit,2.15.0,7105430,178,6,
 2026-11-22,@sveltejs/kit,3.4.0,1566859,247,9,
 2026-11-22,@swc/core,1.16.22,134795,14,2,15
-2026-11-22,@tanstack/react-query,5.108.2,1804006,410,1,
+2026-11-22,@tanstack/react-query,5.108.3,1804006,410,1,
 2026-11-22,@testing-library/react,16.3.3,339581,25,1,2
 2026-11-22,@trpc/server,11.29.7,1835241,262,0,
 2026-11-22,alpinejs,3.17.5,691831,68,1,3
