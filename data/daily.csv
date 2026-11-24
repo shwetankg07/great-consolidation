@@ -9967,7 +9967,7 @@ date,package,version,unpacked_bytes,file_count,direct_deps,tree_size
 2026-11-24,@swc/core,1.16.22,134795,14,2,15
 2026-11-24,@tanstack/react-query,5.108.4,1804006,410,1,
 2026-11-24,@testing-library/react,16.3.3,339581,25,1,2
-2026-11-24,@trpc/server,11.31.0,1888305,262,0,
+2026-11-24,@trpc/server,11.31.2,1897408,262,0,
 2026-11-24,alpinejs,3.17.5,691831,68,1,3
 2026-11-24,astro,7.4.13,3004974,1315,52,
 2026-11-24,axios,1.21.1,2235438,92,4,30
